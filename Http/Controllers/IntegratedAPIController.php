@@ -37,16 +37,18 @@ class IntegratedAPIController extends Controller
                 foreach ($data as $key => $value) { //TODO $data perlu di definisikan di client atau di konversi disini ???
                     $fields->{$key} = $value;
                 }
-                switch ($profile->mode) {
-                    case 'post':
-                        $response = $this->cURLPost($url, $fields, $header, $auth, $username, $password);
-                        break;
-                    case 'get':
-                        $response = $this->cURLGet($url, $fields);
-                        break;
-                    default:
-                        # code...
-                        break;
+                if (property_exists($profile, 'mode')) {
+                    switch ($profile->mode) {
+                        case 'post':
+                            $response = $this->cURLPost($url, $fields, $header, $auth, $username, $password);
+                            break;
+                        case 'get':
+                            $response = $this->cURLGet($url, $fields);
+                            break;
+                        default:
+                            # code...
+                            break;
+                    }
                 }
             }
         } catch (QueryException $e) {
