@@ -49,6 +49,8 @@ class IntegratedAPIController extends Controller
                             # code...
                             break;
                     }
+                } else {
+                    $response = $this->cURLPost($url, $fields, $header, $auth, $username, $password);
                 }
             }
         } catch (QueryException $e) {
