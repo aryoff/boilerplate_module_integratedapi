@@ -15,28 +15,29 @@ class IntegratedAPIController extends Controller
         try {
             $query = DB::select("SELECT profile FROM integratedapi_outbound_profiles WHERE id=?", [$id]);
             if (count($query) === 1) {
-                $url = $query[0]->url;
+                $profile = json_decode($query[0]->profile);
+                $url = $profile->url;
                 $header = array();
-                if (property_exists($query[0], 'header')) {
-                    $header = $query[0]->header;
+                if (property_exists($profile, 'header')) {
+                    $header = $profile->header;
                 }
                 $auth = null;
-                if (property_exists($query[0], 'auth')) {
-                    $auth = $query[0]->auth;
+                if (property_exists($profile, 'auth')) {
+                    $auth = $profile->auth;
                 }
                 $username = null;
-                if (property_exists($query[0], 'username')) {
-                    $username = $query[0]->username;
+                if (property_exists($profile, 'username')) {
+                    $username = $profile->username;
                 }
                 $password = null;
-                if (property_exists($query[0], 'password')) {
-                    $password = $query[0]->password;
+                if (property_exists($profile, 'password')) {
+                    $password = $profile->password;
                 }
-                $fields = $query[0]->fields;
+                $fields = $profile->fields;
                 foreach ($data as $key => $value) { //TODO $data perlu di definisikan di client atau di konversi disini ???
                     $fields->{$key} = $value;
                 }
-                switch ($query[0]->mode) {
+                switch ($profile->mode) {
                     case 'post':
                         $response = $this->cURLPost($url, $fields, $header, $auth, $username, $password);
                         break;
