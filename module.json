@@ -1,0 +1,13 @@
+{
+    "name": "IntegratedAPI",
+    "alias": "integratedapi",
+    "description": "",
+    "keywords": [],
+    "order": 0,
+    "providers": [
+        "Modules\\IntegratedAPI\\Providers\\IntegratedAPIServiceProvider"
+    ],
+    "aliases": {},
+    "files": [],
+    "requires": []
+}
