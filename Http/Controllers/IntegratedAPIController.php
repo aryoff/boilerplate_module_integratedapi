@@ -5,6 +5,7 @@ namespace Modules\IntegratedAPI\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class IntegratedAPIController extends Controller
 {
@@ -15,6 +16,7 @@ class IntegratedAPIController extends Controller
         try {
             $query = DB::select("SELECT profile FROM integratedapi_outbound_profiles WHERE id=?", [$id]);
             if (count($query) === 1) {
+                Log::info($query[0]->profile);
                 $profile = json_decode($query[0]->profile);
                 $url = $profile->url;
                 $header = array();
