@@ -5,6 +5,7 @@ namespace Modules\IntegratedAPI\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class IntegratedAPIController extends Controller
 {
@@ -34,8 +35,16 @@ class IntegratedAPIController extends Controller
                     $password = $profile->password;
                 }
                 $fields = $profile->fields;
-                foreach ($data as $key => $value) { //TODO $data perlu di definisikan di client atau di konversi disini ???
-                    $fields->{$key} = $value;
+                if (property_exists($profile, 'field_conversion')) {
+                    foreach ($profile->field_conversion as $element) { //Konversi data
+                        if (property_exists($data, $element->source)) {
+                            $fields->{$element->target} = $data->{$element->source};
+                        }
+                    }
+                } else {
+                    foreach ($data as $key => $value) { //default semua data include
+                        $fields->{$key} = $value;
+                    }
                 }
                 if (property_exists($profile, 'mode')) {
                     switch ($profile->mode) {
@@ -54,7 +63,7 @@ class IntegratedAPIController extends Controller
                 }
             }
         } catch (QueryException $e) {
-            # code
+            Log::error($e);
         }
         return $response;
     }
