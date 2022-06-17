@@ -89,25 +89,24 @@ class IntegratedAPIController extends Controller
         if ($auth != null) {
             switch ($auth) {
                 case 'basic':
-                    $auth_mode = CURLAUTH_BASIC;
+                    $option[CURLOPT_HTTPAUTH] = CURLAUTH_BASIC;
                     break;
                 case 'digest':
-                    $auth_mode = CURLAUTH_DIGEST;
+                    $option[CURLOPT_HTTPAUTH] = CURLAUTH_DIGEST;
                     break;
                 case 'ntlm':
-                    $auth_mode = CURLAUTH_NTLM;
+                    $option[CURLOPT_HTTPAUTH] = CURLAUTH_NTLM;
                     break;
                 default:
-                    $auth_mode = CURLAUTH_ANY;
+                    $option[CURLOPT_HTTPAUTH] = CURLAUTH_ANY;
                     break;
             }
-            $option['CURLOPT_HTTPAUTH'] = $auth_mode;
         }
         if ($username != null && $password != null) {
-            $option['CURLOPT_USERPWD'] = "$username:$password";
+            $option[CURLOPT_USERPWD] = "$username:$password";
         }
         if ($header != array()) {
-            $option['CURLOPT_HTTPHEADER'] = $header;
+            $option[CURLOPT_HTTPHEADER] = $header;
         }
         curl_setopt_array($curl, $option);
         $post_result = json_decode(curl_exec($curl));
