@@ -2,6 +2,7 @@
 
 namespace Modules\IntegratedAPI\Http\Controllers;
 
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
@@ -49,42 +50,6 @@ class IntegratedAPIController extends Controller
         $response->status = 'Success';
         return $response;
     }
-
-
-    // public function send_whatsapp($destination_number, $element_name)
-    // {
-    //     $curl = curl_init();
-
-    //     curl_setopt_array($curl, array(
-    //         CURLOPT_URL => "https://webhook.infomedia.co.id/whatsapp/sendHSM",
-    //         CURLOPT_RETURNTRANSFER => true,
-    //         CURLOPT_ENCODING => "",
-    //         CURLOPT_MAXREDIRS => 10,
-    //         CURLOPT_TIMEOUT => 0,
-    //         CURLOPT_FOLLOWLOCATION => true,
-    //         CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-    //         CURLOPT_CUSTOMREQUEST => "POST",
-    //         CURLOPT_POSTFIELDS => "{ \n\t \"account_id\": \"6281292929947\",\n     \"to\": \"62" . $destination_number . "\",\n     \"element_name\": \"" . $element_name . "\",\n     \"data\": [] \n\t}",
-    //         CURLOPT_HTTPHEADER => array(
-    //             "Content-Type: application/json",
-    //             "partner_token: d9dd329ce2d1d4047275c1251aa6c1eb18adcc9c43395af6ae776dddbd21a0b493fb728d61107438c0ea052b45507195",
-    //         ),
-    //     ));
-    //     $response = curl_exec($curl);
-    //     $err = curl_error($curl);
-
-    //     curl_close($curl);
-    //     $temp = json_decode($response);
-    //     if ($temp->sts_msg == '') {
-    //         return 'FAIL';
-    //     } else {
-    //         return $temp->sts_msg;
-    //     }
-    // }
-
-
-
-
     function send(int $id, object $data)
     {
         $response = new \stdClass;
@@ -99,20 +64,24 @@ class IntegratedAPIController extends Controller
                 $username = $this->propertyCheckAssign($profile, 'username');
                 $password = $this->propertyCheckAssign($profile, 'password');
                 $fields = $this->fieldConversion($profile, $data);
-                if (property_exists($profile, 'mode')) {
-                    switch ($profile->mode) {
-                        case 'post':
-                            $response = $this->cURLPost($url, $fields, $header, $auth, $username, $password);
-                            break;
-                        case 'get':
-                            $response = $this->cURLGet($url, $fields);
-                            break;
-                        default:
-                            # code...
-                            break;
+                if ($fields) {
+                    if (property_exists($profile, 'mode')) {
+                        switch ($profile->mode) {
+                            case 'post':
+                                $response = $this->cURLPost($url, $fields, $header, $auth, $username, $password);
+                                break;
+                            case 'get':
+                                $response = $this->cURLGet($url, $fields);
+                                break;
+                            default:
+                                # code...
+                                break;
+                        }
+                    } else {
+                        $response = $this->cURLPost($url, $fields, $header, $auth, $username, $password);
                     }
                 } else {
-                    $response = $this->cURLPost($url, $fields, $header, $auth, $username, $password);
+                    Log::error('Field mismatch');
                 }
             }
         } catch (QueryException $e) {
@@ -130,19 +99,24 @@ class IntegratedAPIController extends Controller
     }
     function fieldConversion(object $object, object $data)
     {
-        $fields = $object->fields;
-        if (property_exists($object, 'field_conversion')) {
-            foreach ($object->field_conversion as $element) { //Konversi data
-                if (property_exists($data, $element->source)) {
-                    $fields->{$element->target} = $data->{$element->source};
+        try {
+            $fields = $object->fields->default;
+            if (property_exists($object->fields, 'required')) {
+                $required = $object->fields->required;
+                foreach ($required as $element) { //Konversi data
+                    if (property_exists($data, $element->source)) {
+                        $fields->{$element->dest} = $data->{$element->source};
+                    }
+                }
+            } else {
+                foreach ($data as $key => $value) { //default semua data include
+                    $fields->{$key} = $value;
                 }
             }
-        } else {
-            foreach ($data as $key => $value) { //default semua data include
-                $fields->{$key} = $value;
-            }
+            return $fields;
+        } catch (Exception $e) {
+            return false;
         }
-        return $fields;
     }
     function cURLPost(string $URL, object $postfields, array $header = array(), string $auth = null, string $username = null, string $password = null)
     {
