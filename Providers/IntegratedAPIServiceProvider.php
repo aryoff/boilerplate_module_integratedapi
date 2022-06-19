@@ -3,7 +3,6 @@
 namespace Modules\IntegratedAPI\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Database\Eloquent\Factory;
 
 class IntegratedAPIServiceProvider extends ServiceProvider
 {

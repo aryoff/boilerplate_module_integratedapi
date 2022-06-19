@@ -5,10 +5,50 @@ namespace Modules\IntegratedAPI\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Log;
 
+define('AUTHORIZATION', 'Authorization');
+define('FAILED', 'failed');
 class IntegratedAPIController extends Controller
 {
+    public function APICallback(Request $request)
+    {
+        $response = new \stdClass;
+        $data = (object) $request->all();
+        $ip = $request->ip();
+        $id = $this->propertyCheckAssign($data, 'id', false);
+        try {
+            if ($id) {
+                $id = Crypt::decrypt($id);
+            }
+            $header = '';
+            if ($request->hasHeader(AUTHORIZATION)) {
+                $header = $request->header(AUTHORIZATION);
+                $header = base64_decode(substr($header, 6, strlen($header) - 6));
+            }
+            $username = substr($header, 0, strpos($header, ':'));
+            $password = substr($header, strpos($header, ':') + 1, strlen($header) - strpos($header, ':') + 1);
+            $source = DB::select("SELECT parameter->'field' AS parameter,dwh_partner_id FROM dwh_sources CROSS JOIN (SELECT :ip AS ip,:username AS username,:password AS password) params WHERE id = :id AND parameter @> jsonb_build_object('username',username) AND parameter @> jsonb_build_object('password',password) AND jsonb_exists(parameter->'allowed_ip', ip)", ['id' => $id, 'ip' => $ip, 'username' => $username, 'password' => $password]); //ambil parameter dari table source sesuai dengan id
+            if (count($source) === 1) {
+                // $this->executeInputInteraction($source, (object) $request->all(), $id);
+                // $classname = 'Modules\IntegratedAPI\Http\Controllers\IntegratedAPIController';
+                // $API = new $classname();
+                // $APIData = json_decode($affected_data[0]->data);
+                // $API->send(2, $APIData); //Kirim data ke dwh
+
+            } else { //Source select failed
+                Log::critical('Failed to authenticate from ' . $ip);
+                $response->status = FAILED;
+            }
+        } catch (DecryptException $decryptErr) { //Decryption failed
+            Log::critical('Failed to decrypt ID from ' . $ip);
+            $response->status = FAILED;
+        }
+
+        $response->status = 'Success';
+        return $response;
+    }
     function send(int $id, object $data)
     {
         $response = new \stdClass;
@@ -18,34 +58,11 @@ class IntegratedAPIController extends Controller
             if (count($query) === 1) {
                 $profile = json_decode($query[0]->profile);
                 $url = $profile->url;
-                $header = array();
-                if (property_exists($profile, 'header')) {
-                    $header = $profile->header;
-                }
-                $auth = null;
-                if (property_exists($profile, 'auth')) {
-                    $auth = $profile->auth;
-                }
-                $username = null;
-                if (property_exists($profile, 'username')) {
-                    $username = $profile->username;
-                }
-                $password = null;
-                if (property_exists($profile, 'password')) {
-                    $password = $profile->password;
-                }
-                $fields = $profile->fields;
-                if (property_exists($profile, 'field_conversion')) {
-                    foreach ($profile->field_conversion as $element) { //Konversi data
-                        if (property_exists($data, $element->source)) {
-                            $fields->{$element->target} = $data->{$element->source};
-                        }
-                    }
-                } else {
-                    foreach ($data as $key => $value) { //default semua data include
-                        $fields->{$key} = $value;
-                    }
-                }
+                $header = $this->propertyCheckAssign($profile, 'header', array());
+                $auth = $this->propertyCheckAssign($profile, 'auth');
+                $username = $this->propertyCheckAssign($profile, 'username');
+                $password = $this->propertyCheckAssign($profile, 'password');
+                $fields = $this->fieldConversion($profile, $data);
                 if (property_exists($profile, 'mode')) {
                     switch ($profile->mode) {
                         case 'post':
@@ -67,13 +84,31 @@ class IntegratedAPIController extends Controller
         }
         return $response;
     }
-    public function APICallback(Request $request)
+    function propertyCheckAssign(object $object, string $element, $default_value = null)
     {
-        $response = (object) $request->all();
-        $response->status = 'Success';
-        return $response;
+        if (property_exists($object, $element)) {
+            return $object->{$element};
+        } else {
+            return $default_value;
+        }
     }
-    function cURLPost(string $URL, object $postfields, array $header = array(), $auth = null, $username = null, $password = null)
+    function fieldConversion(object $object, object $data)
+    {
+        $fields = $object->fields;
+        if (property_exists($object, 'field_conversion')) {
+            foreach ($object->field_conversion as $element) { //Konversi data
+                if (property_exists($data, $element->source)) {
+                    $fields->{$element->target} = $data->{$element->source};
+                }
+            }
+        } else {
+            foreach ($data as $key => $value) { //default semua data include
+                $fields->{$key} = $value;
+            }
+        }
+        return $fields;
+    }
+    function cURLPost(string $URL, object $postfields, array $header = array(), string $auth = null, string $username = null, string $password = null)
     {
         $curl = curl_init();
         $option = array(
@@ -120,7 +155,7 @@ class IntegratedAPIController extends Controller
         curl_close($curl);
         return $post_result;
     }
-    function cURLGet($URL, $getfields)
+    function cURLGet(string $URL, object $getfields)
     {
         $get_url = $URL . '?';
         foreach ($getfields as $key => $value) {
