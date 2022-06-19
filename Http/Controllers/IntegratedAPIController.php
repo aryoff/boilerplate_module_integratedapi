@@ -49,6 +49,42 @@ class IntegratedAPIController extends Controller
         $response->status = 'Success';
         return $response;
     }
+
+
+    // public function send_whatsapp($destination_number, $element_name)
+    // {
+    //     $curl = curl_init();
+
+    //     curl_setopt_array($curl, array(
+    //         CURLOPT_URL => "https://webhook.infomedia.co.id/whatsapp/sendHSM",
+    //         CURLOPT_RETURNTRANSFER => true,
+    //         CURLOPT_ENCODING => "",
+    //         CURLOPT_MAXREDIRS => 10,
+    //         CURLOPT_TIMEOUT => 0,
+    //         CURLOPT_FOLLOWLOCATION => true,
+    //         CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+    //         CURLOPT_CUSTOMREQUEST => "POST",
+    //         CURLOPT_POSTFIELDS => "{ \n\t \"account_id\": \"6281292929947\",\n     \"to\": \"62" . $destination_number . "\",\n     \"element_name\": \"" . $element_name . "\",\n     \"data\": [] \n\t}",
+    //         CURLOPT_HTTPHEADER => array(
+    //             "Content-Type: application/json",
+    //             "partner_token: d9dd329ce2d1d4047275c1251aa6c1eb18adcc9c43395af6ae776dddbd21a0b493fb728d61107438c0ea052b45507195",
+    //         ),
+    //     ));
+    //     $response = curl_exec($curl);
+    //     $err = curl_error($curl);
+
+    //     curl_close($curl);
+    //     $temp = json_decode($response);
+    //     if ($temp->sts_msg == '') {
+    //         return 'FAIL';
+    //     } else {
+    //         return $temp->sts_msg;
+    //     }
+    // }
+
+
+
+
     function send(int $id, object $data)
     {
         $response = new \stdClass;
@@ -153,6 +189,10 @@ class IntegratedAPIController extends Controller
         curl_setopt_array($curl, $option);
         $post_result = json_decode(curl_exec($curl));
         curl_close($curl);
+        if ($URL == "https://webhook.infomedia.co.id/whatsapp/sendHSM") {
+            Log::info(json_encode($post_result));
+            Log::info(json_encode($option));
+        }
         return $post_result;
     }
     function cURLGet(string $URL, object $getfields)
