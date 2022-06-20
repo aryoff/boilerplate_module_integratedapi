@@ -118,35 +118,7 @@ class IntegratedAPIController extends Controller
             return false;
         }
     }
-    function dataEncoder(object $data, array $header = array())
-    {
-        $temp = '';
-        foreach ($data as $key => $value) {
-            $temp .= $key . '=' . $value . '&';
-        }
-        $temp = substr($temp, 0, strlen($temp) - 1);
-        $contentEncoded = false;
-        foreach ($header as $field) {
-            if (substr($field, 0, 13) === 'Content-Type:') {
-                switch (substr($field, 14, strlen($field) - 14)) {
-                    case 'application/json':
-                        $contentEncoded = json_encode($data);
-                        break;
-                    case 'application/x-www-form-urlencoded':
-                        $contentEncoded = $temp;
-                        break;
-                    default:
-                        break;
-                }
-            }
-        }
-        if (count($header) === 0) {
-            return $temp;
-        } else {
-            return $contentEncoded;
-        }
-    }
-    function cURLPost(string $URL, object $data, array $header = array(), string $auth = null, string $username = null, string $password = null)
+    function cURLPost(string $URL, object $postfields, array $header = array(), string $auth = null, string $username = null, string $password = null)
     {
         $curl = curl_init();
         $option = array(
@@ -161,6 +133,7 @@ class IntegratedAPIController extends Controller
             CURLOPT_HTTPAUTH => CURLAUTH_ANY,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => json_encode($postfields),
             CURLOPT_HTTPHEADER => array(
                 'Content-Type: application/json'
             ),
@@ -187,20 +160,18 @@ class IntegratedAPIController extends Controller
         if ($header != array()) {
             $option[CURLOPT_HTTPHEADER] = $header;
         }
-        $postfields = $this->dataEncoder($data, $header);
-        if ($postfields) {
-            $option[CURLOPT_POSTFIELDS] = $postfields;
-        }
         curl_setopt_array($curl, $option);
         $post_result = json_decode(curl_exec($curl));
         curl_close($curl);
         return $post_result;
     }
-    function cURLGet(string $URL, object $data)
+    function cURLGet(string $URL, object $getfields)
     {
         $get_url = $URL . '?';
-        $getfields = $this->dataEncoder($data);
-        $get_url = $get_url . $getfields;
+        foreach ($getfields as $key => $value) {
+            $get_url .= $key . '=' . $value . '&';
+        }
+        $get_url = substr($get_url, 0, strlen($get_url) - 1);
         $curl = curl_init();
         curl_setopt_array($curl, array(
             CURLOPT_URL => $get_url,
