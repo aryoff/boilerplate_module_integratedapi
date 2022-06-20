@@ -121,7 +121,6 @@ class IntegratedAPIController extends Controller
     function dataEncoder(object $data, array $header = array())
     {
         $temp = '';
-        Log::info(json_encode($data));
         foreach ($data as $key => $value) {
             if (!is_object($value)) {
                 $temp .= $key . '=' . $value . '&';
@@ -129,7 +128,6 @@ class IntegratedAPIController extends Controller
                 $temp .= $key . '=' . json_encode($value) . '&';
             }
         }
-        Log::info($temp);
         $temp = substr($temp, 0, strlen($temp) - 1);
         $contentEncoded = false;
         foreach ($header as $field) {
@@ -152,7 +150,7 @@ class IntegratedAPIController extends Controller
             return $contentEncoded;
         }
     }
-    function cURLPost(string $URL, object $postfields, array $header = array(), string $auth = null, string $username = null, string $password = null)
+    function cURLPost(string $URL, object $data, array $header = array(), string $auth = null, string $username = null, string $password = null)
     {
         $curl = curl_init();
         $option = array(
@@ -167,7 +165,6 @@ class IntegratedAPIController extends Controller
             CURLOPT_HTTPAUTH => CURLAUTH_ANY,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'POST',
-            CURLOPT_POSTFIELDS => json_encode($postfields),
             CURLOPT_HTTPHEADER => array(
                 'Content-Type: application/json'
             ),
@@ -194,19 +191,20 @@ class IntegratedAPIController extends Controller
         if ($header != array()) {
             $option[CURLOPT_HTTPHEADER] = $header;
         }
-        $this->dataEncoder($postfields, $header);
+        $postfields = $this->dataEncoder($data, $header);
+        if ($postfields) {
+            $option[CURLOPT_POSTFIELDS] = $postfields;
+        }
         curl_setopt_array($curl, $option);
         $post_result = json_decode(curl_exec($curl));
         curl_close($curl);
         return $post_result;
     }
-    function cURLGet(string $URL, object $getfields)
+    function cURLGet(string $URL, object $data)
     {
         $get_url = $URL . '?';
-        foreach ($getfields as $key => $value) {
-            $get_url .= $key . '=' . $value . '&';
-        }
-        $get_url = substr($get_url, 0, strlen($get_url) - 1);
+        $getfields = $this->dataEncoder($data);
+        $get_url = $get_url . $getfields;
         $curl = curl_init();
         curl_setopt_array($curl, array(
             CURLOPT_URL => $get_url,
