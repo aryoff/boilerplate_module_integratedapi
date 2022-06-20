@@ -125,6 +125,8 @@ class IntegratedAPIController extends Controller
         foreach ($data as $key => $value) {
             if (!is_object($value)) {
                 $temp .= $key . '=' . $value . '&';
+            } else {
+                $temp .= $key . '=' . json_encode($value) . '&';
             }
         }
         $temp = substr($temp, 0, strlen($temp) - 1);
