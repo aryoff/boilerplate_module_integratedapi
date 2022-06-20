@@ -129,6 +129,7 @@ class IntegratedAPIController extends Controller
                 $temp .= $key . '=' . json_encode($value) . '&';
             }
         }
+        Log::info($temp);
         $temp = substr($temp, 0, strlen($temp) - 1);
         $contentEncoded = false;
         foreach ($header as $field) {
