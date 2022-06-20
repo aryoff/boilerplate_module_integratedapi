@@ -121,9 +121,11 @@ class IntegratedAPIController extends Controller
     function dataEncoder(object $data, array $header = array())
     {
         $temp = '';
-        Log::info($data);
+        Log::info(json_encode($data));
         foreach ($data as $key => $value) {
-            $temp .= $key . '=' . $value . '&';
+            if (!is_object($value)) {
+                $temp .= $key . '=' . $value . '&';
+            }
         }
         $temp = substr($temp, 0, strlen($temp) - 1);
         $contentEncoded = false;
