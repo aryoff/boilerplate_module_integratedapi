@@ -190,9 +190,9 @@ class IntegratedAPIController extends Controller
         }
         try {
             $data = $this->dataEncoder($postfields, $header);
-            Log::info($data);
         } catch (Exception $e) {
-            Log::error($e);
+            Log::error($postfields);
+            Log::error($header);
         }
         curl_setopt_array($curl, $option);
         $post_result = json_decode(curl_exec($curl));
