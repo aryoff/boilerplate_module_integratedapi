@@ -163,10 +163,6 @@ class IntegratedAPIController extends Controller
         curl_setopt_array($curl, $option);
         $post_result = json_decode(curl_exec($curl));
         curl_close($curl);
-        if ($URL == "https://webhook.infomedia.co.id/whatsapp/sendHSM") {
-            Log::info(json_encode($post_result));
-            Log::info(json_encode($option));
-        }
         return $post_result;
     }
     function cURLGet(string $URL, object $getfields)
