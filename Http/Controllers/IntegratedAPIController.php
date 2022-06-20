@@ -120,35 +120,31 @@ class IntegratedAPIController extends Controller
     }
     function dataEncoder(object $data, array $header = array())
     {
-        try {
-            $temp = '';
-            foreach ($data as $key => $value) {
-                $temp .= $key . '=' . $value . '&';
-            }
-            $temp = substr($temp, 0, strlen($temp) - 1);
-            $contentEncoded = false;
-            foreach ($header as $field) {
-                if (substr($field, 0, 13) === 'Content-Type:') {
-                    switch (substr($field, 14, strlen($field) - 14)) {
-                        case 'application/json':
-                            $contentEncoded = json_encode($data);
-                            break;
-                        case 'application/x-www-form-urlencoded':
-                            $contentEncoded = $temp;
-                            break;
-                        default:
-                            break;
-                    }
+        $temp = '';
+        Log::info($data);
+        foreach ($data as $key => $value) {
+            $temp .= $key . '=' . $value . '&';
+        }
+        $temp = substr($temp, 0, strlen($temp) - 1);
+        $contentEncoded = false;
+        foreach ($header as $field) {
+            if (substr($field, 0, 13) === 'Content-Type:') {
+                switch (substr($field, 14, strlen($field) - 14)) {
+                    case 'application/json':
+                        $contentEncoded = json_encode($data);
+                        break;
+                    case 'application/x-www-form-urlencoded':
+                        $contentEncoded = $temp;
+                        break;
+                    default:
+                        break;
                 }
             }
-            if (count($header) === 0) {
-                return $temp;
-            } else {
-                return $contentEncoded;
-            }
-        } catch (Exception $e) {
-            Log::error($data);
-            Log::error($header);
+        }
+        if (count($header) === 0) {
+            return $temp;
+        } else {
+            return $contentEncoded;
         }
     }
     function cURLPost(string $URL, object $postfields, array $header = array(), string $auth = null, string $username = null, string $password = null)
