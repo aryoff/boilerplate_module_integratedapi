@@ -122,7 +122,7 @@ class IntegratedAPIController extends Controller
     {
         $temp = '';
         foreach ($data as $key => $value) {
-            if (!is_object($value)) {
+            if (!is_object($value) && !is_array($value)) {
                 $temp .= $key . '=' . $value . '&';
             } else {
                 $temp .= $key . '=' . json_encode($value) . '&';
